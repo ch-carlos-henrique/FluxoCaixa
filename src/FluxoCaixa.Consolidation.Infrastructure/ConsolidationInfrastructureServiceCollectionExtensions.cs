@@ -3,6 +3,7 @@ using FluxoCaixa.Consolidation.Infrastructure.Persistence;
 using FluxoCaixa.Consolidation.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace FluxoCaixa.Consolidation.Infrastructure;
 
@@ -28,5 +29,16 @@ public static class ConsolidationInfrastructureServiceCollectionExtensions
         services.AddScoped<IProcessedMessageRepository, ProcessedMessageRepository>();
 
         return services;
+    }
+
+    /// <summary>
+    /// Aplica migrations pendentes no banco de dados de Consolidação.
+    /// Deve ser chamado no startup da API, antes de receber requisições.
+    /// </summary>
+    public static async Task ApplyMigrationsAsync(this IHost host)
+    {
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<DailyConsolidationDbContext>();
+        await db.Database.MigrateAsync();
     }
 }

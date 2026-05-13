@@ -4,10 +4,24 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!--
+      System.Security.Cryptography.Xml é dependência transitiva de Microsoft.EntityFrameworkCore.Design
+      (via referência ao projeto Infrastructure). Vulnerabilidade não afeta produção.
+    -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.7" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FluxoCaixa.Consolidation.Application\FluxoCaixa.Consolidation.Application.csproj" />
+    <ProjectReference Include="..\FluxoCaixa.Consolidation.Infrastructure\FluxoCaixa.Consolidation.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
