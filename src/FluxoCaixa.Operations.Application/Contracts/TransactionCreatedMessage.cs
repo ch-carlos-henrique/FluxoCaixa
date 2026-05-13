@@ -1,8 +1,8 @@
-namespace FluxoCaixa.Consolidation.Application.Contracts;
+namespace FluxoCaixa.Operations.Application.Contracts;
 
 /// <summary>
-/// Contrato de mensagem consumido pelo serviço de Consolidação quando uma transação é criada.
-/// Publicado pelo serviço de Operações via outbox + RabbitMQ.
+/// Contrato de mensagem publicado pelo serviço de Operações ao criar uma transação.
+/// Armazenado no outbox e publicado para o RabbitMQ pelo OutboxPublisherWorker.
 /// </summary>
 public sealed record TransactionCreatedMessage(
     Guid MessageId,

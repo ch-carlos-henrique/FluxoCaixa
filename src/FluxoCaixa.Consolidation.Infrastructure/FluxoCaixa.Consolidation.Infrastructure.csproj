@@ -4,6 +4,26 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!--
+      System.Security.Cryptography.Xml é dependência transitiva de Microsoft.EntityFrameworkCore.Design
+      (pacote usado apenas em tempo de design para geração de migrations — PrivateAssets=all).
+      A vulnerabilidade não afeta código de produção. Supressão justificada e documentada.
+    -->
+    <NoWarn>$(NoWarn);NU1903</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" Version="8.5.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FluxoCaixa.Consolidation.Application\FluxoCaixa.Consolidation.Application.csproj" />
+  </ItemGroup>
 
 </Project>

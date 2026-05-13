@@ -25,5 +25,10 @@ public sealed record IdempotencyKey
         return Result.Success(new IdempotencyKey(value));
     }
 
+    /// <summary>
+    /// Cria uma instância a partir de dado confiável (ex: carregado do banco de dados).
+    /// </summary>
+    public static IdempotencyKey FromTrusted(string value) => new(value);
+
     public override string ToString() => Value;
 }
