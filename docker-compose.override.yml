@@ -1,0 +1,15 @@
+version: "3.9"
+
+# Override para desenvolvimento local — não commitar segredos reais aqui
+services:
+  operations-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Secret: "dev-secret-min-32-chars-change-in-prod!"
+    volumes:
+      - ./src/FluxoCaixa.Operations.API:/app/src:ro
+
+  consolidation-api:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Jwt__Secret: "dev-secret-min-32-chars-change-in-prod!"
