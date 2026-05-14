@@ -46,6 +46,14 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Operations: "Host=postgres;Port=5432;Database=fluxocaixa_operations;Username=fluxocaixa;Password=fluxocaixa_dev"
       RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      # Em produção, definir JWT_SECRET como variável de ambiente antes de rodar docker-compose
+      Jwt__Secret: "${JWT_SECRET:-dev-secret-min-32-chars-change-in-prod!}"
+      Jwt__Issuer: FluxoCaixa.Operations
+      Jwt__Audience: FluxoCaixa
+      Jwt__ExpiryMinutes: "60"
+      Jwt__RefreshTokenExpiryDays: "7"
     depends_on:
       postgres:
         condition: service_healthy
@@ -64,6 +72,11 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__Consolidation: "Host=postgres;Port=5432;Database=fluxocaixa_consolidation;Username=fluxocaixa;Password=fluxocaixa_dev"
       RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      Jwt__Secret: "${JWT_SECRET:-dev-secret-min-32-chars-change-in-prod!}"
+      Jwt__Issuer: FluxoCaixa.Operations
+      Jwt__Audience: FluxoCaixa
     depends_on:
       postgres:
         condition: service_healthy
