@@ -266,7 +266,7 @@ dotnet ef database update \
 
 ## Arquitetura e Decisões
 
-- [Visão Geral da Arquitetura](docs/ARCHITECTURE.md)
+- [Visão Geral da Arquitetura](docs/architecture/ARCHITECTURE.md)
 - [ADR-001: Dois serviços + comunicação assíncrona](docs/architecture/adr/ADR-001-two-services-async.md)
 - [ADR-002: Transactional Outbox](docs/architecture/adr/ADR-002-transactional-outbox.md)
 - [ADR-003: Consistência eventual](docs/architecture/adr/ADR-003-eventual-consistency.md)
@@ -300,8 +300,8 @@ FluxoCaixa/
 │   └── load/
 │       └── daily-balance-50rps.js                # k6 load test
 ├── docs/
-│   ├── ARCHITECTURE.md
 │   └── architecture/
+│       ├── ARCHITECTURE.md
 │       ├── adr/                         # ADR-001 a ADR-008
 │       └── c4/                          # Diagramas C4 (Mermaid)
 ├── docker-compose.yml
