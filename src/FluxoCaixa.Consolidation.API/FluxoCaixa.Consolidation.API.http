@@ -1,0 +1,6 @@
+@FluxoCaixa.Consolidation.API_HostAddress = http://localhost:5003
+
+GET {{FluxoCaixa.Consolidation.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,22 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fluxocaixa
+  title: FluxoCaixa — Gestão de Fluxo de Caixa
+  description: >
+    Sistema de gestão de fluxo de caixa composto por dois serviços:
+    Operations (lançamentos) e Consolidation (consolidado diário).
+  tags:
+    - dotnet
+    - csharp
+    - microservices
+    - postgresql
+    - rabbitmq
+  annotations:
+    github.com/project-slug: "ch-carlos-henrique/FluxoCaixa"
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: production
+  owner: carlos-henrique
+  system: fluxo-caixa

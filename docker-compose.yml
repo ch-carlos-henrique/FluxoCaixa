@@ -1,0 +1,89 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fluxocaixa-postgres
+    environment:
+      POSTGRES_USER: fluxocaixa
+      POSTGRES_PASSWORD: fluxocaixa_dev
+      POSTGRES_DB: fluxocaixa
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fluxocaixa"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: fluxocaixa-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  operations-api:
+    build:
+      context: .
+      dockerfile: src/FluxoCaixa.Operations.API/Dockerfile
+    container_name: fluxocaixa-operations-api
+    ports:
+      - "5001:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Operations: "Host=postgres;Port=5432;Database=fluxocaixa_operations;Username=fluxocaixa;Password=fluxocaixa_dev"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      # Em produção, definir JWT_SECRET como variável de ambiente antes de rodar docker-compose
+      Jwt__Secret: "${JWT_SECRET:-dev-secret-min-32-chars-change-in-prod!}"
+      Jwt__Issuer: FluxoCaixa.Operations
+      Jwt__Audience: FluxoCaixa
+      Jwt__ExpiryMinutes: "60"
+      Jwt__RefreshTokenExpiryDays: "7"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+  consolidation-api:
+    build:
+      context: .
+      dockerfile: src/FluxoCaixa.Consolidation.API/Dockerfile
+    container_name: fluxocaixa-consolidation-api
+    ports:
+      - "5002:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Consolidation: "Host=postgres;Port=5432;Database=fluxocaixa_consolidation;Username=fluxocaixa;Password=fluxocaixa_dev"
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: guest
+      RabbitMQ__Password: guest
+      Jwt__Secret: "${JWT_SECRET:-dev-secret-min-32-chars-change-in-prod!}"
+      Jwt__Issuer: FluxoCaixa.Operations
+      Jwt__Audience: FluxoCaixa
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: on-failure
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

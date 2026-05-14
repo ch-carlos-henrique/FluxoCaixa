@@ -1,0 +1,13 @@
+version: "3.9"
+
+# Override para desenvolvimento local.
+# Substitui o Jwt__Secret do docker-compose.yml com o secret de dev explícito.
+# Para produção: definir JWT_SECRET como variável de ambiente do host antes de rodar docker-compose.
+services:
+  operations-api:
+    environment:
+      Jwt__Secret: "dev-secret-min-32-chars-change-in-prod!"
+
+  consolidation-api:
+    environment:
+      Jwt__Secret: "dev-secret-min-32-chars-change-in-prod!"
