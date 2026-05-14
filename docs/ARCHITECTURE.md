@@ -83,6 +83,64 @@ Header `Idempotency-Key` na API + tabela `processed_messages` no consumer. Índi
 | Validação | FluentValidation 11 |
 | Resiliência | Microsoft.Extensions.Resilience (Polly v8) |
 | Observabilidade | OpenTelemetry + Serilog + prometheus-net |
-| Testes | xUnit + FluentAssertions + NSubstitute + NetArchTest |
+| Testes | xUnit + FluentAssertions + NSubstitute + NetArchTest + Testcontainers |
 | Containerização | Docker + docker-compose |
 | CI/CD | GitHub Actions |
+
+---
+
+## Estratégia de Testes
+
+O projeto adota três níveis de testes, cada um com escopo e velocidade distintos:
+
+| Nível | Projetos | Quantidade | Velocidade | Dependências |
+|---|---|---|---|---|
+| **Unit** | `Operations.UnitTests` + `Consolidation.UnitTests` | 48 testes | Muito rápido (~1s) | Nenhuma — NSubstitute para mocks |
+| **Architecture** | `Architecture.Tests` | 7 testes | Rápido (~2s) | Nenhuma — NetArchTest |
+| **Integration** | `Operations.IntegrationTests` + `Consolidation.IntegrationTests` | 11 testes | Lento (~30-60s) | Docker (Testcontainers) |
+
+### Testes Unitários (48)
+
+Testam regras de domínio e handlers de forma isolada, sem banco ou broker.
+
+- **Operations.UnitTests (36)**: `TransactionTests` (12), `CreateTransactionHandlerTests` (3), `GetTransactionByIdHandlerTests` (2) e demais handlers
+- **Consolidation.UnitTests (12)**: `DailyBalanceTests` (8), `GetDailyBalanceHandlerTests` (3) e demais handlers
+
+### Testes de Arquitetura (7)
+
+NetArchTest verifica as regras de dependência da Clean Architecture em tempo de CI:
+- Domain não referencia Infrastructure (Operations e Consolidation)
+- Application não referencia Infrastructure (Operations e Consolidation)
+- Handlers residem no namespace correto
+- Entidades de domínio residem no namespace correto
+
+### Testes de Integração (11)
+
+Testam as APIs end-to-end com infraestrutura real via **Testcontainers** (containers Docker efêmeros):
+
+**`OperationsWebApplicationFactory`** / **`ConsolidationWebApplicationFactory`**:
+- Herda `WebApplicationFactory<Program>` — sobe a API real em memória
+- Inicia `PostgreSqlContainer` + `RabbitMqContainer` via Testcontainers (`IAsyncLifetime`)
+- Sobrescreve `ConnectionStrings`, `RabbitMQ:*` e `Jwt:*` para isolar o ambiente de teste
+- Expõe `GenerateToken(email, role, merchantId)` para geração de JWT em-processo
+
+**`TransactionsApiTests` (6)**:
+| Teste | Verifica |
+|---|---|
+| `PostTransaction_WithValidToken_Returns201` | Happy path: 201 + ID válido |
+| `PostTransaction_WithoutToken_Returns401` | Auth middleware ativo |
+| `PostTransaction_WithDuplicateIdempotencyKey_ReturnsSameId` | Idempotência: mesmo ID, sem duplicação |
+| `PostTransaction_WithDifferentMerchantId_Returns403` | Autorização por resource ownership |
+| `PostTransaction_WithoutIdempotencyKeyHeader_Returns400` | Validação do header obrigatório |
+| `GetTransaction_WithValidId_ReturnsOk` | Cria + busca por ID |
+
+**`ConsolidationApiTests` (5)** (incluindo `GetBalanceRange_WithAdminToken_ReturnsOk`):
+| Teste | Verifica |
+|---|---|
+| `GetDailyBalance_WithoutToken_Returns401` | Auth middleware ativo |
+| `GetDailyBalance_WithValidToken_ReturnsOkOrNotFound` | Endpoint funcional sem dados pré-populados |
+| `GetDailyBalance_WithDifferentMerchantId_Returns403` | Resource ownership |
+| `GetBalanceRange_WithoutToken_Returns401` | Auth no endpoint de range |
+| `GetBalanceRange_WithAdminToken_ReturnsOk` | Admin acessa qualquer merchant |
+
+> Os testes de integração são excluídos do CI padrão (`--filter "FullyQualifiedName!~IntegrationTests"`) por exigirem Docker. Para executá-los localmente: `dotnet test` com Docker Desktop rodando.

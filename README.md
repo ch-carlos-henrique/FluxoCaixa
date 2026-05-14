@@ -65,7 +65,7 @@ As migrations são aplicadas automaticamente na inicialização. O seed de desen
 |---|---|---|---|
 | `admin@fluxocaixa.dev` | `Admin@123` | Admin | — |
 | `merchant@fluxocaixa.dev` | `Merchant@123` | Merchant | `00000000-0000-0000-0000-000000000001` |
-| `merchant01@fluxocaixa.dev` … `merchant20@fluxocaixa.dev` | `Merchant@123` | Merchant | UUIDs sequenciais |
+| `merchant01@fluxocaixa.dev` … `merchant20@fluxocaixa.dev` | `Merchant@123` | Merchant | `00000000-0000-0000-0000-000000000001` (mesmo do merchant principal — para testes de carga k6) |
 
 ---
 
@@ -145,8 +145,8 @@ curl -s -X POST http://localhost:5001/api/transactions \
 ## Como Rodar os Testes
 
 ```bash
-# Todos os testes (unit + architecture)
-dotnet test
+# Apenas unit tests + architecture (não requerem Docker)
+dotnet test --filter "FullyQualifiedName!~IntegrationTests"
 
 # Apenas unit tests das operações
 dotnet test tests/FluxoCaixa.Operations.UnitTests/
@@ -158,7 +158,32 @@ dotnet test tests/FluxoCaixa.Architecture.Tests/
 dotnet test -v n
 ```
 
-**Resultado esperado**: 55 testes aprovados (36 Operations unit + 12 Consolidation unit + 7 Architecture).
+**Resultado esperado (sem Docker)**: 55 testes aprovados (36 Operations unit + 12 Consolidation unit + 7 Architecture).
+
+### Testes de Integração (requerem Docker)
+
+Os testes de integração sobem containers PostgreSQL e RabbitMQ automaticamente via **Testcontainers** — Docker Desktop deve estar em execução.
+
+```bash
+# Operations: 6 testes de integração
+dotnet test tests/FluxoCaixa.Operations.IntegrationTests/
+
+# Consolidation: 5 testes de integração
+dotnet test tests/FluxoCaixa.Consolidation.IntegrationTests/
+
+# Todos os testes (unit + integration + architecture)
+dotnet test
+```
+
+**Resultado esperado (com Docker)**: 66 testes aprovados (55 unit/architecture + 11 integration).
+
+| Suite | Testes | Requer Docker |
+|---|---|---|
+| Operations Unit | 36 | Não |
+| Consolidation Unit | 12 | Não |
+| Architecture | 7 | Não |
+| Operations Integration | 6 | **Sim** |
+| Consolidation Integration | 5 | **Sim** |
 
 ---
 
@@ -267,11 +292,13 @@ FluxoCaixa/
 │   ├── FluxoCaixa.Consolidation.Domain/
 │   └── FluxoCaixa.Consolidation.Infrastructure/
 ├── tests/
-│   ├── FluxoCaixa.Operations.UnitTests/
-│   ├── FluxoCaixa.Consolidation.UnitTests/
-│   ├── FluxoCaixa.Architecture.Tests/
+│   ├── FluxoCaixa.Operations.UnitTests/           # 36 testes unit
+│   ├── FluxoCaixa.Operations.IntegrationTests/   # 6 testes (Testcontainers)
+│   ├── FluxoCaixa.Consolidation.UnitTests/       # 12 testes unit
+│   ├── FluxoCaixa.Consolidation.IntegrationTests/ # 5 testes (Testcontainers)
+│   ├── FluxoCaixa.Architecture.Tests/            # 7 testes NetArchTest
 │   └── load/
-│       └── daily-balance-50rps.js       # k6 load test
+│       └── daily-balance-50rps.js                # k6 load test
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   └── architecture/
@@ -286,5 +313,5 @@ FluxoCaixa/
 
 ## Stack
 
-.NET 10 · EF Core 10 · PostgreSQL 16 · RabbitMQ 3.13 · MassTransit 8.5 · JWT Bearer · BCrypt · FluentValidation · Polly v8 · OpenTelemetry · Serilog · xUnit · Docker
+.NET 10 · EF Core 10 · PostgreSQL 16 · RabbitMQ 3.13 · MassTransit 8.5 · JWT Bearer · BCrypt · FluentValidation · Polly v8 · OpenTelemetry · Serilog · xUnit · FluentAssertions · NSubstitute · Testcontainers · NetArchTest · Docker
 

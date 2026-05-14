@@ -56,7 +56,7 @@ Operations e Consolidation são bounded contexts separados. `DailyBalance.Apply`
 
 ### Positivas
 
-- Domain 100% testável sem infraestrutura (55 testes passando sem dependência de banco ou broker).
+- Domain 100% testável sem infraestrutura (48 testes unitários passando sem dependência de banco ou broker). Adicionalmente, 11 testes de integração via Testcontainers validam o comportamento end-to-end da API com PostgreSQL e RabbitMQ reais.
 - Regras de negócio centralizadas nas entidades — sem vazamento para handlers ou controllers.
 - Facilita adição de novos handlers sem modificar código existente (OCP).
 - Architecture tests (`NetArchTest`) verificam a regra de dependência em tempo de build/CI.
