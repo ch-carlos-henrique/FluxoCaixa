@@ -7,19 +7,46 @@ using FluxoCaixa.Consolidation.Application.Queries;
 using FluxoCaixa.Consolidation.API.Middleware;
 using FluxoCaixa.Consolidation.Domain.Common;
 using FluxoCaixa.Consolidation.Infrastructure;
+using FluxoCaixa.Consolidation.Infrastructure.Persistence;
+using FluxoCaixa.Consolidation.Infrastructure.Telemetry;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Prometheus;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 
+// Bootstrap logger — captura erros de inicialização antes do host estar pronto.
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog — JSON estruturado; enrichers; lê MinimumLevel do appsettings.json.
+builder.Host.UseSerilog((ctx, services, config) => config
+    .ReadFrom.Configuration(ctx.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithThreadId()
+    .WriteTo.Console(new JsonFormatter()));
 
 // JWT
 var jwtSecret = builder.Configuration["Jwt:Secret"]
@@ -99,8 +126,22 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-// Health Checks
-builder.Services.AddHealthChecks();
+// OpenTelemetry — traces (ActivitySource); lê ServiceName do ConsolidationTelemetry.
+// O exporter Console é adequado para desenvolvimento local sem coletor externo.
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r
+        .AddService(
+            serviceName: ConsolidationTelemetry.ServiceName,
+            serviceVersion: ConsolidationTelemetry.ServiceVersion))
+    .WithTracing(tracing => tracing
+        .AddSource(ConsolidationTelemetry.ServiceName)
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddConsoleExporter());
+
+// Health Checks — /health/live (sem checks), /health/ready (DB + RabbitMQ via MassTransit).
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<DailyConsolidationDbContext>("consolidation-db");
 
 // OpenAPI
 builder.Services.AddOpenApi();
@@ -111,6 +152,9 @@ var app = builder.Build();
 await app.ApplyMigrationsAsync();
 
 // Middleware Pipeline
+app.UseSerilogRequestLogging(opts =>
+    opts.MessageTemplate =
+        "HTTP {RequestMethod} {RequestPath} → {StatusCode} em {Elapsed:0.0000} ms");
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseCors();
@@ -173,6 +217,17 @@ consolidation.MapGet("/daily/range", async (
 .WithSummary("Consultar saldos consolidados em um intervalo de datas");
 
 app.Run();
+
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "Aplicação encerrou inesperadamente durante o startup.");
+    throw;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
 
 // Helpers
 static bool HasMerchantAccess(HttpContext ctx, Guid requestedMerchantId)

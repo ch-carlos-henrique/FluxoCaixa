@@ -1,3 +1,5 @@
+using Serilog.Context;
+
 namespace FluxoCaixa.Operations.API.Middleware;
 
 internal sealed class CorrelationIdMiddleware
@@ -15,9 +17,15 @@ internal sealed class CorrelationIdMiddleware
             correlationId = Guid.NewGuid().ToString();
         }
 
-        context.Items[CorrelationIdHeader]              = correlationId.ToString();
-        context.Response.Headers[CorrelationIdHeader]   = correlationId.ToString();
+        var correlationIdValue = correlationId.ToString();
 
-        await _next(context);
+        context.Items[CorrelationIdHeader]            = correlationIdValue;
+        context.Response.Headers[CorrelationIdHeader] = correlationIdValue;
+
+        // Propaga o CorrelationId para todos os logs Serilog gerados durante a requisição.
+        using (LogContext.PushProperty("CorrelationId", correlationIdValue))
+        {
+            await _next(context);
+        }
     }
 }

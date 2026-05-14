@@ -1,5 +1,6 @@
 using FluxoCaixa.Operations.Application.Contracts;
 using FluxoCaixa.Operations.Infrastructure.Persistence;
+using FluxoCaixa.Operations.Infrastructure.Telemetry;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,6 +81,9 @@ public sealed class OutboxPublisherWorker : BackgroundService
             .Take(50)
             .ToListAsync(cancellationToken);
 
+        // Atualiza o gauge de mensagens pendentes (lido pelo OTel a cada coleta).
+        OperationsTelemetry.SetOutboxPendingCount(pendingMessages.Count);
+
         if (pendingMessages.Count == 0)
         {
             return;
@@ -103,6 +107,8 @@ public sealed class OutboxPublisherWorker : BackgroundService
                 outboxMessage.Status = "Published";
                 outboxMessage.PublishedAt = DateTime.UtcNow;
 
+                OperationsTelemetry.OutboxMessagesPublished.Add(1);
+
                 _logger.LogInformation(
                     "Mensagem {MessageId} ({EventType}) publicada com sucesso.",
                     outboxMessage.Id, outboxMessage.EventType);
@@ -115,6 +121,9 @@ public sealed class OutboxPublisherWorker : BackgroundService
                 {
                     // Esgotou as tentativas — move para DLQ interno (status "Failed").
                     outboxMessage.Status = "Failed";
+
+                    OperationsTelemetry.OutboxMessagesFailed.Add(1);
+
                     _logger.LogError(
                         ex,
                         "Mensagem {MessageId} ({EventType}) falhou após {MaxRetries} tentativas. Status: Failed (DLQ).",

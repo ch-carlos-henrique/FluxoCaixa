@@ -6,19 +6,46 @@ using FluxoCaixa.Operations.Application.Queries;
 using FluxoCaixa.Operations.API.Middleware;
 using FluxoCaixa.Operations.Domain.Common;
 using FluxoCaixa.Operations.Infrastructure;
+using FluxoCaixa.Operations.Infrastructure.Persistence;
+using FluxoCaixa.Operations.Infrastructure.Telemetry;
 using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Prometheus;
 using Scalar.AspNetCore;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 
+// Bootstrap logger — captura erros de inicialização antes do host estar pronto.
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Serilog — JSON estruturado; enrichers; lê MinimumLevel do appsettings.json.
+builder.Host.UseSerilog((ctx, services, config) => config
+    .ReadFrom.Configuration(ctx.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithThreadId()
+    .WriteTo.Console(new JsonFormatter()));
 
 // JWT
 var jwtSecret = builder.Configuration["Jwt:Secret"]
@@ -96,8 +123,25 @@ builder.Services.AddMassTransit(x =>
     });
 });
 
-// Health Checks
-builder.Services.AddHealthChecks();
+// OpenTelemetry — traces (ActivitySource) + métricas customizadas (Meter).
+// O exporter Console é adequado para desenvolvimento local sem coletor externo.
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r
+        .AddService(
+            serviceName: OperationsTelemetry.ServiceName,
+            serviceVersion: OperationsTelemetry.ServiceVersion))
+    .WithTracing(tracing => tracing
+        .AddSource(OperationsTelemetry.ServiceName)
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddConsoleExporter())
+    .WithMetrics(metrics => metrics
+        .AddMeter(OperationsTelemetry.ServiceName)
+        .AddConsoleExporter());
+
+// Health Checks — /health/live (sem checks), /health/ready (DB + RabbitMQ via MassTransit).
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<TransactionDbContext>("operations-db");
 
 // OpenAPI
 builder.Services.AddOpenApi();
@@ -108,6 +152,9 @@ var app = builder.Build();
 await app.ApplyMigrationsAndSeedAsync();
 
 // Middleware Pipeline
+app.UseSerilogRequestLogging(opts =>
+    opts.MessageTemplate =
+        "HTTP {RequestMethod} {RequestPath} → {StatusCode} em {Elapsed:0.0000} ms");
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseCors();
@@ -194,6 +241,8 @@ transactions.MapPost("/", async (
         return MapError(result.Error);
     }
 
+    OperationsTelemetry.TransactionsCreated.Add(1);
+
     return Results.Created($"/api/transactions/{result.Value.Id}", result.Value);
 })
 .WithName("CreateTransaction")
@@ -239,6 +288,17 @@ transactions.MapGet("/", async (
 .WithSummary("Listar lancamentos por comerciante e periodo");
 
 app.Run();
+
+}
+catch (Exception ex) when (ex is not HostAbortedException)
+{
+    Log.Fatal(ex, "Aplicação encerrou inesperadamente durante o startup.");
+    throw;
+}
+finally
+{
+    await Log.CloseAndFlushAsync();
+}
 
 // Helpers
 static bool HasMerchantAccess(HttpContext ctx, Guid requestedMerchantId)
