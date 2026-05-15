@@ -19,9 +19,21 @@ Ambos os cenários resultam em inconsistência permanente.
 Implementar o **Transactional Outbox Pattern**:
 
 1. `TransactionDbContext.SaveChangesAsync` intercepta os `DomainEvents` da entidade e persiste um registro na tabela `outbox_messages` **na mesma transação** que o lançamento em `cash_entries`.
-2. Um `BackgroundService` (`OutboxPublisherWorker`) lê periodicamente os registros com status `Pending` e os publica no RabbitMQ.
+2. Um `BackgroundService` (`OutboxPublisherWorker`) lê periodicamente os registros e os publica no RabbitMQ.
 3. Após publicação bem-sucedida, o status é atualizado para `Published`.
-4. Após 3 falhas consecutivas (Polly retry — ver ADR-007), o status é atualizado para `Failed` (DLQ interno).
+4. Após 3 falhas consecutivas (Polly retry — ver ADR-007), o status é atualizado para `Failed`.
+
+### Ciclo de vida do status
+
+```
+Pending → Processing → Published
+                     → Pending   (falha temporária, retenta no próximo ciclo)
+                     → Failed    (3 falhas consecutivas, intervenção manual)
+```
+
+### Concorrência com múltiplas réplicas
+
+O worker usa `UPDATE ... WHERE id IN (SELECT ... FOR UPDATE SKIP LOCKED) RETURNING *` (PostgreSQL nativo) para reivindicar mensagens atomicamente. Mensagens em `Processing` são bloqueadas para outras réplicas. Um passo de recuperação reseta mensagens presas em `Processing` por mais de 5 minutos de volta a `Pending`, tratando o caso de réplicas que falharam durante a publicação.
 
 ### Schema da tabela `outbox_messages`
 
@@ -30,9 +42,10 @@ Implementar o **Transactional Outbox Pattern**:
 | `id` | UUID | Identificador único da mensagem |
 | `event_type` | TEXT | Nome do tipo do evento (ex: `TransactionCreatedEvent`) |
 | `payload` | JSON | Serialização do evento |
-| `status` | TEXT | `Pending` → `Published` ou `Failed` |
+| `status` | TEXT | `Pending` → `Processing` → `Published` ou `Pending` ou `Failed` |
 | `created_at` | TIMESTAMPTZ | Momento de criação |
 | `published_at` | TIMESTAMPTZ | Momento de publicação bem-sucedida |
+| `processing_started_at` | TIMESTAMPTZ | Preenchido quando worker reivindica a mensagem; NULL ao concluir |
 | `retry_count` | INT | Número de tentativas realizadas |
 
 ## Consequências
@@ -59,6 +72,23 @@ Implementar o **Transactional Outbox Pattern**:
 | Change Data Capture (Debezium / Kafka Connect) | Complexidade de infraestrutura desproporcionalmente alta para o escopo |
 | Saga com compensação | Adequado para fluxos multi-serviço complexos; excessivo para este caso de dois serviços com um único evento |
 | Azure Service Bus com transações de sessão | Dependência de cloud provider — documentado como evolução futura para produção |
+| **MassTransit Outbox embutido** | Detalhado abaixo |
+
+### Por que não o Outbox embutido do MassTransit?
+
+MassTransit oferece `EntityFrameworkOutbox` (pacote `MassTransit.EntityFrameworkCore`) que implementa o mesmo padrão. A decisão de **não utilizá-lo** se baseia em:
+
+| Aspecto | MassTransit Outbox Embutido | Implementação Custom (escolhida) |
+|---|---|---|
+| **Tabelas geradas** | 3 tabelas automáticas: `OutboxMessage`, `OutboxState`, `InboxState` | 1 tabela `outbox_messages` (domain-owned, schema controlado) |
+| **Acoplamento** | O domínio precisa referenciar `MassTransit.EntityFrameworkCore` para configurar o `DbContext` | O domínio não conhece MassTransit — apenas serializa `DomainEvents` para JSON |
+| **Idempotência do consumer** | Via `InboxState` (MassTransit gerencia) | Via `processed_messages` (implementação explícita — ADR-008) |
+| **Visibilidade** | Internamente gerenciado pelo framework; difícil de observar/depurar | Tabela `outbox_messages` visível, consultável, com `retry_count` e `status` explícitos |
+| **Retry** | Retry interno do MassTransit | Polly v8 com backoff exponencial + jitter (ADR-007) — configuração explícita |
+| **Troca de broker** | Outbox acoplado ao ciclo de vida do transporte MassTransit | Worker usa `IPublishEndpoint` (interface base MassTransit) — transporte é detalhe de infraestrutura |
+| **Troca de ORM** | Requer `MassTransit.EntityFrameworkCore` — amarrado ao EF Core | Worker pode ser adaptado para outro ORM sem alterar o contrato de domínio |
+
+**Conclusão**: a implementação custom mantém o Domínio e a Aplicação livres de dependências de infraestrutura de mensageria (DIP), oferece observabilidade direta via tabela, e permite controle total sobre política de retry. O MassTransit Outbox seria preferível em projetos onde a equipe já usa MassTransit extensivamente e aceita o acoplamento em troca de zero código de plumbing.
 
 ## Relação com Princípios SOLID
 

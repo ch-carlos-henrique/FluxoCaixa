@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 using FluxoCaixa.Operations.Application.Handlers;
 using FluxoCaixa.Operations.Application.Queries;
 using FluxoCaixa.Operations.Domain.Entities;
@@ -35,10 +35,10 @@ public sealed class GetTransactionByIdHandlerTests
 
         var result = await CreateSut().HandleAsync(new GetTransactionByIdQuery(transaction.Id.Value));
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Id.Should().Be(transaction.Id.Value);
-        result.Value.MerchantId.Should().Be(merchantId);
-        result.Value.Type.Should().Be("Credit");
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Id.ShouldBe(transaction.Id.Value);
+        result.Value.MerchantId.ShouldBe(merchantId);
+        result.Value.Type.ShouldBe("Credit");
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class GetTransactionByIdHandlerTests
 
         var result = await CreateSut().HandleAsync(new GetTransactionByIdQuery(Guid.NewGuid()));
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Transaction.NotFound");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("Transaction.NotFound");
     }
 }

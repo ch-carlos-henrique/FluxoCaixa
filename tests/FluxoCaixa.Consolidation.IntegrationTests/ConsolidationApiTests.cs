@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -33,7 +33,7 @@ public sealed class ConsolidationApiTests : IClassFixture<ConsolidationWebApplic
             $"/api/consolidation/daily?merchantId={MerchantId}&date={date:yyyy-MM-dd}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public sealed class ConsolidationApiTests : IClassFixture<ConsolidationWebApplic
             $"/api/consolidation/daily?merchantId={MerchantId}&date={date:yyyy-MM-dd}");
 
         // Assert — 200 (se existir saldo) ou 404 (se ainda não houver consolidação)
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.NotFound);
+        response.StatusCode.ShouldBeOneOf(HttpStatusCode.OK, HttpStatusCode.NotFound);
     }
 
     [Fact]
@@ -71,7 +71,7 @@ public sealed class ConsolidationApiTests : IClassFixture<ConsolidationWebApplic
             $"/api/consolidation/daily?merchantId={MerchantId}&date={date:yyyy-MM-dd}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ public sealed class ConsolidationApiTests : IClassFixture<ConsolidationWebApplic
             $"/api/consolidation/daily/range?merchantId={MerchantId}&from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -111,6 +111,6 @@ public sealed class ConsolidationApiTests : IClassFixture<ConsolidationWebApplic
             $"/api/consolidation/daily/range?merchantId={MerchantId}&from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
 
         // Assert
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.NotFound);
+        response.StatusCode.ShouldBeOneOf(HttpStatusCode.OK, HttpStatusCode.NotFound);
     }
 }

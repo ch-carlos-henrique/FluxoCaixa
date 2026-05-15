@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 using FluxoCaixa.Consolidation.Domain.Entities;
 using FluxoCaixa.Consolidation.Domain.ValueObjects;
 
@@ -17,11 +17,11 @@ public sealed class DailyBalanceTests
     {
         var balance = CreateBalance();
 
-        balance.MerchantId.Should().Be(_merchantId);
-        balance.Date.Value.Should().Be(_date.Value);
-        balance.TotalCredits.Should().Be(0m);
-        balance.TotalDebits.Should().Be(0m);
-        balance.Balance.Should().Be(0m);
+        balance.MerchantId.ShouldBe(_merchantId);
+        balance.Date.Value.ShouldBe(_date.Value);
+        balance.TotalCredits.ShouldBe(0m);
+        balance.TotalDebits.ShouldBe(0m);
+        balance.Balance.ShouldBe(0m);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public sealed class DailyBalanceTests
     {
         var act = () => DailyBalance.CreateForMerchant(Guid.Empty, _date);
 
-        act.Should().Throw<ArgumentException>();
+        Should.Throw<ArgumentException>(act);
     }
 
     [Fact]
@@ -39,9 +39,9 @@ public sealed class DailyBalanceTests
 
         balance.Apply("Credit", 150m);
 
-        balance.TotalCredits.Should().Be(150m);
-        balance.TotalDebits.Should().Be(0m);
-        balance.Balance.Should().Be(150m);
+        balance.TotalCredits.ShouldBe(150m);
+        balance.TotalDebits.ShouldBe(0m);
+        balance.Balance.ShouldBe(150m);
     }
 
     [Fact]
@@ -51,9 +51,9 @@ public sealed class DailyBalanceTests
 
         balance.Apply("Debit", 80m);
 
-        balance.TotalCredits.Should().Be(0m);
-        balance.TotalDebits.Should().Be(80m);
-        balance.Balance.Should().Be(-80m);
+        balance.TotalCredits.ShouldBe(0m);
+        balance.TotalDebits.ShouldBe(80m);
+        balance.Balance.ShouldBe(-80m);
     }
 
     [Fact]
@@ -65,9 +65,9 @@ public sealed class DailyBalanceTests
         balance.Apply("Credit", 50m);
         balance.Apply("Debit", 70m);
 
-        balance.TotalCredits.Should().Be(250m);
-        balance.TotalDebits.Should().Be(70m);
-        balance.Balance.Should().Be(180m);
+        balance.TotalCredits.ShouldBe(250m);
+        balance.TotalDebits.ShouldBe(70m);
+        balance.Balance.ShouldBe(180m);
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public sealed class DailyBalanceTests
         balance.Apply("Credit", 300m);
         balance.Apply("Debit", 120m);
 
-        balance.Balance.Should().Be(balance.TotalCredits - balance.TotalDebits);
+        balance.Balance.ShouldBe(balance.TotalCredits - balance.TotalDebits);
     }
 
     [Theory]
@@ -89,7 +89,7 @@ public sealed class DailyBalanceTests
 
         var act = () => balance.Apply("Credit", amount);
 
-        act.Should().Throw<InvalidOperationException>();
+        Should.Throw<InvalidOperationException>(act);
     }
 
     [Fact]
@@ -99,6 +99,6 @@ public sealed class DailyBalanceTests
 
         var act = () => balance.Apply("Unknown", 100m);
 
-        act.Should().Throw<InvalidOperationException>();
+        Should.Throw<InvalidOperationException>(act);
     }
 }

@@ -260,7 +260,12 @@ dotnet ef database update \
 | Circuit breaker (Polly) | Justificado quando houver chamadas HTTP síncronas entre serviços |
 | MediatR com pipeline behaviors | Justificado em sistemas com muitos handlers e cross-cutting concerns |
 | SAGA pattern | Fluxos com múltiplos serviços e rollback compensatório |
+| RS256 (JWT assimétrico) | Quando múltiplos serviços externos precisarem validar tokens sem acesso ao secret |
 | Particionamento por merchant_id | Escala acima de 50 RPS com isolamento de dados por comerciante |
+| Endpoint de estorno | Cancelamento via novo lançamento de sinal inverso com rastreabilidade de audit trail |
+| ASP.NET Core Identity | Substituição da tabela `users` manual se múltiplos provedores de login forem necessários |
+| .NET Aspire | Orquestração local com dashboard OTLP nativo e service discovery automático (substitui docker-compose em dev) |
+| Wolverine (JasperFx) | Alternativa MIT ao MassTransit para mensageria |
 
 ---
 
@@ -311,7 +316,20 @@ FluxoCaixa/
 
 ---
 
+## Trade-offs Principais
+
+| Decisão | Alternativa considerada | Por que esta escolha |
+|---|---|---|
+| **RabbitMQ** | Azure Service Bus | Self-hosted, sem dependência de cloud provider — adequado para desafio técnico local. Em produção, Service Bus teria SLA superior e integraria nativamente com Azure (ver Evoluções Futuras) |
+| **PostgreSQL** | SQL Server | Open-source, menor footprint de imagem Docker, suporte nativo a `FOR UPDATE SKIP LOCKED` (lock pessimista no Outbox — evita duplo processamento em múltiplas réplicas), sem licença |
+| **Dois serviços independentes** | Monólito modular | NFR central exige que lançamentos não caiam se o consolidado cair — em monólito, uma exceção no módulo de consolidação pode derrubar toda a aplicação |
+| **JWT HS256 manual** | ASP.NET Core Identity / OIDC | Identity traz 5 tabelas e 3 managers para um serviço que só precisa emitir tokens. HS256 simples é suficiente para o escopo; RS256 e OIDC são evoluções documentadas |
+| **Transactional Outbox** | Publicação direta no broker | Garante atomicidade entre persistência e intenção de publicar sem 2PC. Única forma de garantir "at-least-once delivery" sem infraestrutura extra (CDC/Debezium) |
+| **BCrypt (work factor 12)** | SHA-512 | SHA-512 é rápido (intencionalmente) — inseguro para senhas. BCrypt é lento por design, resistente a ataques de força bruta. Argon2id é evolução documentada |
+
+---
+
 ## Stack
 
-.NET 10 · EF Core 10 · PostgreSQL 16 · RabbitMQ 3.13 · MassTransit 8.5 · JWT Bearer · BCrypt · FluentValidation · Polly v8 · OpenTelemetry · Serilog · xUnit · FluentAssertions · NSubstitute · Testcontainers · NetArchTest · Docker
+.NET 10 · EF Core 10 · PostgreSQL 16 · RabbitMQ 3.13 · MassTransit 8.5 · JWT Bearer · BCrypt · FluentValidation · Polly v8 · OpenTelemetry · Serilog · xUnit · Shouldly · NSubstitute · Testcontainers · NetArchTest · Docker
 

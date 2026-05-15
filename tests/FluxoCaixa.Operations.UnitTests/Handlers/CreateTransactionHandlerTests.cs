@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 using FluentValidation;
 using FluentValidation.Results;
 using FluxoCaixa.Operations.Application.Commands;
@@ -41,10 +41,10 @@ public sealed class CreateTransactionHandlerTests
         var sut = CreateSut();
         var result = await sut.HandleAsync(command);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.MerchantId.Should().Be(command.MerchantId);
-        result.Value.Type.Should().Be("Credit");
-        result.Value.Amount.Should().Be(100m);
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.MerchantId.ShouldBe(command.MerchantId);
+        result.Value.Type.ShouldBe("Credit");
+        result.Value.Amount.ShouldBe(100m);
         await _repository.Received(1).AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
         await _repository.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
@@ -69,8 +69,8 @@ public sealed class CreateTransactionHandlerTests
         var sut = CreateSut();
         var result = await sut.HandleAsync(command);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.IdempotencyKey.Should().Be("dup-key");
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.IdempotencyKey.ShouldBe("dup-key");
         await _repository.DidNotReceive().AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
     }
 
@@ -88,8 +88,8 @@ public sealed class CreateTransactionHandlerTests
         var sut = CreateSut();
         var result = await sut.HandleAsync(command);
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("AmountGreaterThanZero");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("AmountGreaterThanZero");
         await _repository.DidNotReceive().AddAsync(Arg.Any<Transaction>(), Arg.Any<CancellationToken>());
     }
 }
