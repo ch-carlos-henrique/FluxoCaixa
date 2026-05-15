@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 using FluxoCaixa.Operations.Domain.Entities;
 using FluxoCaixa.Operations.Domain.Events;
 using FluxoCaixa.Operations.Domain.ValueObjects;
@@ -17,13 +17,13 @@ public sealed class TransactionTests
     {
         var result = Transaction.CreateCredit(_merchantId, _validMoney, "desc", _validDate, _validKey);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.MerchantId.Should().Be(_merchantId);
-        result.Value.Type.Value.Should().Be("Credit");
-        result.Value.Amount.Amount.Should().Be(100m);
-        result.Value.Amount.Currency.Should().Be("BRL");
-        result.Value.Description.Should().Be("desc");
-        result.Value.OccurredAt.Should().Be(_validDate);
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.MerchantId.ShouldBe(_merchantId);
+        result.Value.Type.Value.ShouldBe("Credit");
+        result.Value.Amount.Amount.ShouldBe(100m);
+        result.Value.Amount.Currency.ShouldBe("BRL");
+        result.Value.Description.ShouldBe("desc");
+        result.Value.OccurredAt.ShouldBe(_validDate);
     }
 
     [Fact]
@@ -31,9 +31,8 @@ public sealed class TransactionTests
     {
         var result = Transaction.CreateCredit(_merchantId, _validMoney, null, _validDate, _validKey);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.DomainEvents.Should().ContainSingle()
-            .Which.Should().BeOfType<TransactionCreatedEvent>();
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.DomainEvents.ShouldHaveSingleItem().ShouldBeOfType<TransactionCreatedEvent>();
     }
 
     [Fact]
@@ -41,8 +40,8 @@ public sealed class TransactionTests
     {
         var result = Transaction.CreateCredit(Guid.Empty, _validMoney, null, _validDate, _validKey);
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Transaction.InvalidMerchantId");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("Transaction.InvalidMerchantId");
     }
 
     [Fact]
@@ -50,8 +49,8 @@ public sealed class TransactionTests
     {
         var result = Transaction.CreateDebit(_merchantId, _validMoney, "desc", _validDate, _validKey);
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Type.Value.Should().Be("Debit");
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Type.Value.ShouldBe("Debit");
     }
 
     [Fact]
@@ -59,8 +58,8 @@ public sealed class TransactionTests
     {
         var result = Transaction.CreateDebit(Guid.Empty, _validMoney, null, _validDate, _validKey);
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Transaction.InvalidMerchantId");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("Transaction.InvalidMerchantId");
     }
 
     [Theory]
@@ -71,8 +70,8 @@ public sealed class TransactionTests
     {
         var result = Money.Create(amount, "BRL");
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Money.InvalidAmount");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("Money.InvalidAmount");
     }
 
     [Theory]
@@ -83,8 +82,8 @@ public sealed class TransactionTests
     {
         var result = Money.Create(100m, currency);
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Money.InvalidCurrency");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("Money.InvalidCurrency");
     }
 
     [Fact]
@@ -92,7 +91,7 @@ public sealed class TransactionTests
     {
         var result = IdempotencyKey.Create(string.Empty);
 
-        result.IsFailure.Should().BeTrue();
+        result.IsFailure.ShouldBeTrue();
     }
 
     [Fact]
@@ -101,7 +100,7 @@ public sealed class TransactionTests
         var longKey = new string('a', 129);
         var result = IdempotencyKey.Create(longKey);
 
-        result.IsFailure.Should().BeTrue();
+        result.IsFailure.ShouldBeTrue();
     }
 
     [Fact]
@@ -109,7 +108,7 @@ public sealed class TransactionTests
     {
         var result = IdempotencyKey.Create("valid-key-123");
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.Value.Should().Be("valid-key-123");
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.Value.ShouldBe("valid-key-123");
     }
 }

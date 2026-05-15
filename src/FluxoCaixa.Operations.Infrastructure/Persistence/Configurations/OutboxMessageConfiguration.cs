@@ -38,6 +38,10 @@ internal sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outb
             .HasColumnName("published_at")
             .HasColumnType("timestamptz");
 
+        builder.Property(m => m.ProcessingStartedAt)
+            .HasColumnName("processing_started_at")
+            .HasColumnType("timestamptz");
+
         builder.Property(m => m.RetryCount)
             .HasColumnName("retry_count")
             .IsRequired();

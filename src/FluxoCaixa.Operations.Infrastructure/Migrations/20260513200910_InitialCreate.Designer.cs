@@ -98,6 +98,10 @@ namespace FluxoCaixa.Operations.Infrastructure.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("published_at");
 
+                    b.Property<DateTime?>("ProcessingStartedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("processing_started_at");
+
                     b.Property<int>("RetryCount")
                         .HasColumnType("integer")
                         .HasColumnName("retry_count");

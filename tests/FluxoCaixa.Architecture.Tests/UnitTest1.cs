@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 using NetArchTest.Rules;
 
 namespace FluxoCaixa.Architecture.Tests;
@@ -31,8 +31,8 @@ public sealed class ArchitectureTests
                 "Microsoft.EntityFrameworkCore")
             .GetResult();
 
-        result.IsSuccessful.Should().BeTrue(
-            because: "a camada de Domínio deve ser livre de dependências de infraestrutura");
+        result.IsSuccessful.ShouldBeTrue(
+            "a camada de Domínio deve ser livre de dependências de infraestrutura");
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public sealed class ArchitectureTests
                 "Microsoft.EntityFrameworkCore")
             .GetResult();
 
-        result.IsSuccessful.Should().BeTrue(
-            because: "a camada de Application não deve referenciar Infrastructure diretamente");
+        result.IsSuccessful.ShouldBeTrue(
+            "a camada de Application não deve referenciar Infrastructure diretamente");
     }
 
     [Fact]
@@ -59,8 +59,8 @@ public sealed class ArchitectureTests
                 "Microsoft.EntityFrameworkCore")
             .GetResult();
 
-        result.IsSuccessful.Should().BeTrue(
-            because: "a camada de Domínio deve ser livre de dependências de infraestrutura");
+        result.IsSuccessful.ShouldBeTrue(
+            "a camada de Domínio deve ser livre de dependências de infraestrutura");
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public sealed class ArchitectureTests
                 "Microsoft.EntityFrameworkCore")
             .GetResult();
 
-        result.IsSuccessful.Should().BeTrue(
-            because: "a camada de Application não deve referenciar Infrastructure diretamente");
+        result.IsSuccessful.ShouldBeTrue(
+            "a camada de Application não deve referenciar Infrastructure diretamente");
     }
 
     // ─── Convenções de nomenclatura ──────────────────────────────────────────────────
@@ -87,8 +87,8 @@ public sealed class ArchitectureTests
             .Should().ResideInNamespaceContaining("Handlers")
             .GetResult();
 
-        result.IsSuccessful.Should().BeTrue(
-            because: "todas as classes Handler devem estar em um namespace Handlers");
+        result.IsSuccessful.ShouldBeTrue(
+            "todas as classes Handler devem estar em um namespace Handlers");
     }
 
     [Fact]
@@ -99,8 +99,8 @@ public sealed class ArchitectureTests
             .Should().ResideInNamespaceContaining("Handlers")
             .GetResult();
 
-        result.IsSuccessful.Should().BeTrue(
-            because: "todas as classes Handler devem estar em um namespace Handlers");
+        result.IsSuccessful.ShouldBeTrue(
+            "todas as classes Handler devem estar em um namespace Handlers");
     }
 
     [Fact]
@@ -112,6 +112,6 @@ public sealed class ArchitectureTests
             .Should().ResideInNamespaceContaining("FluxoCaixa.Operations.Domain")
             .GetResult();
 
-        result.IsSuccessful.Should().BeTrue();
+        result.IsSuccessful.ShouldBeTrue();
     }
 }
