@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+﻿using Shouldly;
 using FluxoCaixa.Consolidation.Application.Handlers;
 using FluxoCaixa.Consolidation.Application.Queries;
 using FluxoCaixa.Consolidation.Domain.Entities;
@@ -36,11 +36,11 @@ public sealed class GetDailyBalanceHandlerTests
 
         var result = await CreateSut().HandleAsync(new GetDailyBalanceQuery(_merchantId, _date));
 
-        result.IsSuccess.Should().BeTrue();
-        result.Value.MerchantId.Should().Be(_merchantId);
-        result.Value.TotalCredits.Should().Be(500m);
-        result.Value.TotalDebits.Should().Be(200m);
-        result.Value.Balance.Should().Be(300m);
+        result.IsSuccess.ShouldBeTrue();
+        result.Value.MerchantId.ShouldBe(_merchantId);
+        result.Value.TotalCredits.ShouldBe(500m);
+        result.Value.TotalDebits.ShouldBe(200m);
+        result.Value.Balance.ShouldBe(300m);
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public sealed class GetDailyBalanceHandlerTests
 
         var result = await CreateSut().HandleAsync(new GetDailyBalanceQuery(_merchantId, _date));
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("GetDailyBalance.NotFound");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("GetDailyBalance.NotFound");
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class GetDailyBalanceHandlerTests
     {
         var result = await CreateSut().HandleAsync(new GetDailyBalanceQuery(Guid.Empty, _date));
 
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("GetDailyBalance.MerchantId");
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Code.ShouldBe("GetDailyBalance.MerchantId");
     }
 }

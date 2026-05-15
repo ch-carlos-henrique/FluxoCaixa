@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using FluxoCaixa.Operations.Application.Commands;
 
 namespace FluxoCaixa.Operations.UnitTests.Validators;
@@ -21,7 +21,7 @@ public sealed class CreateTransactionCommandValidatorTests
     {
         var result = await _sut.ValidateAsync(ValidCommand());
 
-        result.IsValid.Should().BeTrue();
+        result.IsValid.ShouldBeTrue();
     }
 
     [Theory]
@@ -34,8 +34,8 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(command.Amount));
+        result.IsValid.ShouldBeFalse();
+        result.Errors.Count(e => e.PropertyName == nameof(command.Amount)).ShouldBe(1);
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(command.MerchantId));
+        result.IsValid.ShouldBeFalse();
+        result.Errors.Count(e => e.PropertyName == nameof(command.MerchantId)).ShouldBe(1);
     }
 
     [Theory]
@@ -60,8 +60,8 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.Type));
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.PropertyName == nameof(command.Type));
     }
 
     [Theory]
@@ -73,7 +73,7 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeTrue();
+        result.IsValid.ShouldBeTrue();
     }
 
     [Theory]
@@ -86,8 +86,8 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain(e => e.PropertyName == nameof(command.Currency));
+        result.IsValid.ShouldBeFalse();
+        result.Errors.ShouldContain(e => e.PropertyName == nameof(command.Currency));
     }
 
     [Fact]
@@ -97,8 +97,8 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(command.OccurredAt));
+        result.IsValid.ShouldBeFalse();
+        result.Errors.Count(e => e.PropertyName == nameof(command.OccurredAt)).ShouldBe(1);
     }
 
     [Fact]
@@ -108,8 +108,8 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(command.IdempotencyKey));
+        result.IsValid.ShouldBeFalse();
+        result.Errors.Count(e => e.PropertyName == nameof(command.IdempotencyKey)).ShouldBe(1);
     }
 
     [Fact]
@@ -119,7 +119,7 @@ public sealed class CreateTransactionCommandValidatorTests
 
         var result = await _sut.ValidateAsync(command);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == nameof(command.IdempotencyKey));
+        result.IsValid.ShouldBeFalse();
+        result.Errors.Count(e => e.PropertyName == nameof(command.IdempotencyKey)).ShouldBe(1);
     }
 }

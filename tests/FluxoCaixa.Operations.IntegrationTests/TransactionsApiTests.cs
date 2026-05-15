@@ -1,4 +1,4 @@
-using FluentAssertions;
+using Shouldly;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -47,11 +47,11 @@ public sealed class TransactionsApiTests : IClassFixture<OperationsWebApplicatio
         var response = await _client.PostAsJsonAsync("/api/transactions", body);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
         var result = await response.Content.ReadFromJsonAsync<TransactionResponse>();
-        result.Should().NotBeNull();
-        result!.Id.Should().NotBeEmpty();
-        result.MerchantId.Should().Be(MerchantId);
+        result.ShouldNotBeNull();
+        result!.Id.ShouldNotBe(Guid.Empty);
+        result.MerchantId.ShouldBe(MerchantId);
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public sealed class TransactionsApiTests : IClassFixture<OperationsWebApplicatio
         var response = await client.PostAsJsonAsync("/api/transactions", body);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -103,16 +103,16 @@ public sealed class TransactionsApiTests : IClassFixture<OperationsWebApplicatio
 
         // Act — primeira chamada
         var first = await client.PostAsJsonAsync("/api/transactions", body);
-        first.IsSuccessStatusCode.Should().BeTrue();
+        first.IsSuccessStatusCode.ShouldBeTrue();
         var firstResult = await first.Content.ReadFromJsonAsync<TransactionResponse>();
 
         // Act — segunda chamada, mesma chave
         var second = await client.PostAsJsonAsync("/api/transactions", body);
-        second.IsSuccessStatusCode.Should().BeTrue();
+        second.IsSuccessStatusCode.ShouldBeTrue();
         var secondResult = await second.Content.ReadFromJsonAsync<TransactionResponse>();
 
         // Assert — mesmo ID retornado
-        secondResult!.Id.Should().Be(firstResult!.Id);
+        secondResult!.Id.ShouldBe(firstResult!.Id);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public sealed class TransactionsApiTests : IClassFixture<OperationsWebApplicatio
         var response = await client.PostAsJsonAsync("/api/transactions", body);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public sealed class TransactionsApiTests : IClassFixture<OperationsWebApplicatio
         var response = await client.PostAsJsonAsync("/api/transactions", body);
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -200,9 +200,9 @@ public sealed class TransactionsApiTests : IClassFixture<OperationsWebApplicatio
         var response = await client.GetAsync($"/api/transactions/{createdDto!.Id}");
 
         // Assert
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
         var result = await response.Content.ReadFromJsonAsync<TransactionResponse>();
-        result!.Id.Should().Be(createdDto.Id);
+        result!.Id.ShouldBe(createdDto.Id);
     }
 
     // Tipo auxiliar para desserializar a resposta
