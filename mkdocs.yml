@@ -1,0 +1,35 @@
+site_name: FluxoCaixa
+site_description: Sistema de controle de fluxo de caixa diário — documentação técnica
+site_author: carlos-henrique
+docs_dir: docs
+
+nav:
+  - Início: index.md
+  - Arquitetura:
+      - Visão Geral: architecture/ARCHITECTURE.md
+      - Diagramas C4:
+          - Contexto (L1): architecture/c4/01-context.md
+          - Containers (L2): architecture/c4/02-containers.md
+          - Componentes (L3): architecture/c4/03-components.md
+      - ADRs:
+          - ADR-001 — Dois Serviços + Async: architecture/adr/ADR-001-two-services-async.md
+          - ADR-002 — Transactional Outbox: architecture/adr/ADR-002-transactional-outbox.md
+          - ADR-003 — Consistência Eventual: architecture/adr/ADR-003-eventual-consistency.md
+          - ADR-004 — Clean Architecture + DDD: architecture/adr/ADR-004-clean-architecture-ddd.md
+          - ADR-005 — JWT Bearer HS256: architecture/adr/ADR-005-jwt-auth.md
+          - ADR-006 — OpenTelemetry + Serilog: architecture/adr/ADR-006-observability-opentelemetry.md
+          - ADR-007 — Polly v8 Retry: architecture/adr/ADR-007-resilience-polly.md
+          - ADR-008 — Idempotência: architecture/adr/ADR-008-idempotency.md
+
+theme:
+  name: material
+  language: pt
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+
+plugins:
+  - techdocs-core

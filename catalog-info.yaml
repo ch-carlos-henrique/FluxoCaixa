@@ -1,22 +1,102 @@
 apiVersion: backstage.io/v1alpha1
-kind: Component
+kind: System
 metadata:
-  name: fluxocaixa
+  name: fluxo-caixa
   title: FluxoCaixa — Gestão de Fluxo de Caixa
   description: >
-    Sistema de gestão de fluxo de caixa composto por dois serviços:
+    Sistema de gestão de fluxo de caixa diário composto por dois serviços independentes:
     Operations (lançamentos) e Consolidation (consolidado diário).
   tags:
     - dotnet
     - csharp
     - microservices
-    - postgresql
-    - rabbitmq
+  annotations:
+    github.com/project-slug: "ch-carlos-henrique/FluxoCaixa"
+    backstage.io/techdocs-ref: dir:.
+spec:
+  owner: carlos-henrique
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fluxo-caixa-operations-api
+  title: FluxoCaixa — Operations API
+  description: >
+    Serviço responsável por lançamentos de crédito e débito e autenticação JWT.
+    Garante disponibilidade independente do serviço de Consolidação via Transactional Outbox.
+  tags:
+    - dotnet
+    - csharp
+    - api
+    - cashflow
   annotations:
     github.com/project-slug: "ch-carlos-henrique/FluxoCaixa"
     backstage.io/techdocs-ref: dir:.
 spec:
   type: service
-  lifecycle: production
+  lifecycle: experimental
+  owner: carlos-henrique
+  system: fluxo-caixa
+  providesApis:
+    - fluxo-caixa-operations-api
+  dependsOn:
+    - resource:fluxo-caixa-postgres
+    - resource:fluxo-caixa-rabbitmq
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: fluxo-caixa-consolidation-api
+  title: FluxoCaixa — Consolidation API
+  description: >
+    Serviço responsável por consumir eventos de lançamentos e expor o saldo diário consolidado.
+    Consistência eventual em relação ao serviço de Lançamentos.
+  tags:
+    - dotnet
+    - csharp
+    - api
+    - cashflow
+  annotations:
+    github.com/project-slug: "ch-carlos-henrique/FluxoCaixa"
+    backstage.io/techdocs-ref: dir:.
+spec:
+  type: service
+  lifecycle: experimental
+  owner: carlos-henrique
+  system: fluxo-caixa
+  providesApis:
+    - fluxo-caixa-consolidation-api
+  dependsOn:
+    - resource:fluxo-caixa-postgres
+    - resource:fluxo-caixa-rabbitmq
+    - component:fluxo-caixa-operations-api
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: fluxo-caixa-postgres
+  title: FluxoCaixa — PostgreSQL
+  description: Banco de dados relacional. Operations e Consolidation usam databases separados no mesmo servidor.
+  tags:
+    - postgresql
+    - database
+spec:
+  type: database
+  lifecycle: experimental
+  owner: carlos-henrique
+  system: fluxo-caixa
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: fluxo-caixa-rabbitmq
+  title: FluxoCaixa — RabbitMQ
+  description: Broker de mensagens para comunicação assíncrona entre Operations e Consolidation.
+  tags:
+    - rabbitmq
+    - messaging
+spec:
+  type: messaging
+  lifecycle: experimental
   owner: carlos-henrique
   system: fluxo-caixa
