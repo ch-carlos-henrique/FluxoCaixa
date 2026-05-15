@@ -95,6 +95,10 @@ namespace FluxoCaixa.Operations.Infrastructure.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("published_at");
 
+                    b.Property<DateTime?>("ProcessingStartedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("processing_started_at");
+
                     b.Property<int>("RetryCount")
                         .HasColumnType("integer")
                         .HasColumnName("retry_count");
@@ -177,7 +181,7 @@ namespace FluxoCaixa.Operations.Infrastructure.Migrations
 
                             b1.HasKey("TransactionId");
 
-                            b1.ToTable("cash_entries");
+                            b1.ToTable("cash_entries", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("TransactionId");

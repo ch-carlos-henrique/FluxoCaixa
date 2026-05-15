@@ -40,6 +40,7 @@ namespace FluxoCaixa.Operations.Infrastructure.Migrations
                     status = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
                     published_at = table.Column<DateTime>(type: "timestamptz", nullable: true),
+                    processing_started_at = table.Column<DateTime>(type: "timestamptz", nullable: true),
                     retry_count = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
