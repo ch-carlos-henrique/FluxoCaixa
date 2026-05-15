@@ -260,7 +260,12 @@ dotnet ef database update \
 | Circuit breaker (Polly) | Justificado quando houver chamadas HTTP síncronas entre serviços |
 | MediatR com pipeline behaviors | Justificado em sistemas com muitos handlers e cross-cutting concerns |
 | SAGA pattern | Fluxos com múltiplos serviços e rollback compensatório |
+| RS256 (JWT assimétrico) | Quando múltiplos serviços externos precisarem validar tokens sem acesso ao secret |
 | Particionamento por merchant_id | Escala acima de 50 RPS com isolamento de dados por comerciante |
+| Endpoint de estorno | Cancelamento via novo lançamento de sinal inverso com rastreabilidade de audit trail |
+| ASP.NET Core Identity | Substituição da tabela `users` manual se múltiplos provedores de login forem necessários |
+| .NET Aspire | Orquestração local com dashboard OTLP nativo e service discovery automático (substitui docker-compose em dev) |
+| Wolverine (JasperFx) | Alternativa MIT ao MassTransit para mensageria |
 
 ---
 
@@ -313,5 +318,5 @@ FluxoCaixa/
 
 ## Stack
 
-.NET 10 · EF Core 10 · PostgreSQL 16 · RabbitMQ 3.13 · MassTransit 8.5 · JWT Bearer · BCrypt · FluentValidation · Polly v8 · OpenTelemetry · Serilog · xUnit · FluentAssertions · NSubstitute · Testcontainers · NetArchTest · Docker
+.NET 10 · EF Core 10 · PostgreSQL 16 · RabbitMQ 3.13 · MassTransit 8.5 · JWT Bearer · BCrypt · FluentValidation · Polly v8 · OpenTelemetry · Serilog · xUnit · Shouldly · NSubstitute · Testcontainers · NetArchTest · Docker
 

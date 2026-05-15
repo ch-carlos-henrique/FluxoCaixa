@@ -68,6 +68,18 @@ Retry 3x com backoff exponencial (2s → 4s → 8s + jitter) via Polly v8. Após
 ### Como evitar lançamentos duplicados em retries?
 Header `Idempotency-Key` na API + tabela `processed_messages` no consumer. Índices UNIQUE no banco como última linha de defesa. → [ADR-008](adr/ADR-008-idempotency.md)
 
+### Por que docker-compose e não .NET Aspire para orquestração local?
+docker-compose (Apache 2.0) foi escolhido porque o NFR central é validado via `docker-compose stop/start` — artefato de avaliação direto. Aspire é uma ferramenta de dev inner loop: em produção ainda requer docker-compose ou Kubernetes (gerado via `aspirate`/`azd`). Para dois serviços, o custo de um projeto `AppHost` extra não traz ROI proporcional. .NET Aspire está documentado como evolução futura para ambientes com 5+ microserviços, onde o dashboard OTLP integrado e o service discovery automático têm valor claro.
+
+### O MassTransit tem licença paga?
+MassTransit **8.x** (versão utilizada: 8.5.0) é Apache 2.0 — uso comercial gratuito. A arquitetura isola MassTransit exclusivamente na camada de Infrastructure, tornando a substituição cirúrgica caso versões futuras mudem o modelo de licença. Alternativas diretas: **Wolverine** (MIT, JasperFx), **Rebus** (MIT) ou `RabbitMQ.Client` diretamente (Apache 2.0). O impacto de troca se limita a `MessagingExtensions.cs`, `OutboxPublisherWorker.cs` e `TransactionCreatedConsumer.cs` — Domain e Application não seriam tocados.
+
+### Por que Shouldly em vez de FluentAssertions?
+FluentAssertions 8.x adotou a **Xceed Community License** (paga para projetos comerciais). **Shouldly 4.3.0 (MIT)** oferece API igualmente expressiva (`ShouldBe` / `ShouldBeTrue` / `ShouldContain`) sem restrição de licença. Alternativa futura se necessário: **AwesomeAssertions** (MIT, mantém a API original do FluentAssertions 7.x).
+
+### Por que o OutboxPublisherWorker foi implementado manualmente em vez do Outbox embutido do MassTransit?
+O `EntityFrameworkOutbox` do MassTransit adiciona 3 tabelas automáticas (`OutboxMessage`, `OutboxState`, `InboxState`) e acopla o `DbContext` ao framework de mensageria, violando DIP. A implementação custom mantém Domain e Application livres de dependências de infraestrutura, oferece observabilidade direta via tabela `outbox_messages` com `retry_count` e `status` explícitos, e permite controle total sobre a política de retry (Polly v8 com backoff exponencial + jitter). → [ADR-002: análise comparativa completa](adr/ADR-002-transactional-outbox.md)
+
 ---
 
 ## Stack Tecnológica
@@ -83,7 +95,7 @@ Header `Idempotency-Key` na API + tabela `processed_messages` no consumer. Índi
 | Validação | FluentValidation 11 |
 | Resiliência | Microsoft.Extensions.Resilience (Polly v8) |
 | Observabilidade | OpenTelemetry + Serilog + prometheus-net |
-| Testes | xUnit + FluentAssertions + NSubstitute + NetArchTest + Testcontainers |
+| Testes | xUnit + Shouldly + NSubstitute + NetArchTest + Testcontainers |
 | Containerização | Docker + docker-compose |
 | CI/CD | GitHub Actions |
 

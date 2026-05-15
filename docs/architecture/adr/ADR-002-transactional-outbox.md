@@ -59,6 +59,23 @@ Implementar o **Transactional Outbox Pattern**:
 | Change Data Capture (Debezium / Kafka Connect) | Complexidade de infraestrutura desproporcionalmente alta para o escopo |
 | Saga com compensação | Adequado para fluxos multi-serviço complexos; excessivo para este caso de dois serviços com um único evento |
 | Azure Service Bus com transações de sessão | Dependência de cloud provider — documentado como evolução futura para produção |
+| **MassTransit Outbox embutido** | Detalhado abaixo |
+
+### Por que não o Outbox embutido do MassTransit?
+
+MassTransit oferece `EntityFrameworkOutbox` (pacote `MassTransit.EntityFrameworkCore`) que implementa o mesmo padrão. A decisão de **não utilizá-lo** se baseia em:
+
+| Aspecto | MassTransit Outbox Embutido | Implementação Custom (escolhida) |
+|---|---|---|
+| **Tabelas geradas** | 3 tabelas automáticas: `OutboxMessage`, `OutboxState`, `InboxState` | 1 tabela `outbox_messages` (domain-owned, schema controlado) |
+| **Acoplamento** | O domínio precisa referenciar `MassTransit.EntityFrameworkCore` para configurar o `DbContext` | O domínio não conhece MassTransit — apenas serializa `DomainEvents` para JSON |
+| **Idempotência do consumer** | Via `InboxState` (MassTransit gerencia) | Via `processed_messages` (implementação explícita — ADR-008) |
+| **Visibilidade** | Internamente gerenciado pelo framework; difícil de observar/depurar | Tabela `outbox_messages` visível, consultável, com `retry_count` e `status` explícitos |
+| **Retry** | Retry interno do MassTransit | Polly v8 com backoff exponencial + jitter (ADR-007) — configuração explícita |
+| **Troca de broker** | Outbox acoplado ao ciclo de vida do transporte MassTransit | Worker usa `IPublishEndpoint` (interface base MassTransit) — transporte é detalhe de infraestrutura |
+| **Troca de ORM** | Requer `MassTransit.EntityFrameworkCore` — amarrado ao EF Core | Worker pode ser adaptado para outro ORM sem alterar o contrato de domínio |
+
+**Conclusão**: a implementação custom mantém o Domínio e a Aplicação livres de dependências de infraestrutura de mensageria (DIP), oferece observabilidade direta via tabela, e permite controle total sobre política de retry. O MassTransit Outbox seria preferível em projetos onde a equipe já usa MassTransit extensivamente e aceita o acoplamento em troca de zero código de plumbing.
 
 ## Relação com Princípios SOLID
 
